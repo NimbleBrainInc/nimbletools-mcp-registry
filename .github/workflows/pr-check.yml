@@ -1,12 +1,12 @@
 name: PR Validation
 
-on:
-  # pull_request:
-  #   branches: [ main ]
-  #   paths:
-  #     - 'servers/**'
-  #     - 'schemas/**'
-  #     - 'tools/**'
+# on:
+#   pull_request:
+#     branches: [ main ]
+#     paths:
+#       - 'servers/**'
+#       - 'schemas/**'
+#       - 'tools/**'
 
 jobs:
   check-changes:

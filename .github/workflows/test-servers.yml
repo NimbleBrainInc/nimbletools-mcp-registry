@@ -1,24 +1,24 @@
 name: Test Servers
 
-on:
-  # push:
-  #   branches: [ main, develop ]
-  #   paths:
-  #     - 'servers/**'
-  # pull_request:
-  #   branches: [ main ]
-  #   paths:
-  #     - 'servers/**'
-  # schedule:
-  #   # Run tests daily at 2 AM UTC
-  #   - cron: '0 2 * * *'
-  # workflow_dispatch:
-  #   inputs:
-  #     test_all:
-  #       description: 'Test all servers (true) or only changed servers (false)'
-  #       required: false
-  #       default: 'false'
-  #       type: boolean
+# on:
+#   push:
+#     branches: [ main, develop ]
+#     paths:
+#       - 'servers/**'
+#   pull_request:
+#     branches: [ main ]
+#     paths:
+#       - 'servers/**'
+#   schedule:
+#     # Run tests daily at 2 AM UTC
+#     - cron: '0 2 * * *'
+#   workflow_dispatch:
+#     inputs:
+#       test_all:
+#         description: 'Test all servers (true) or only changed servers (false)'
+#         required: false
+#         default: 'false'
+#         type: boolean
 
 jobs:
   detect-changes:

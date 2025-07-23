@@ -161,7 +161,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Registry specific
-registry.yaml
+# Registry specific - cache files only
 .registry-cache/
 *.tmp
