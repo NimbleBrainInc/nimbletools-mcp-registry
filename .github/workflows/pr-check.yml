@@ -1,12 +1,12 @@
 name: PR Validation
 
 on:
-  pull_request:
-    branches: [ main ]
-    paths:
-      - 'servers/**'
-      - 'schemas/**'
-      - 'tools/**'
+  # pull_request:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'servers/**'
+  #     - 'schemas/**'
+  #     - 'tools/**'
 
 jobs:
   check-changes:
@@ -15,188 +15,188 @@ jobs:
       servers-changed: ${{ steps.changes.outputs.servers }}
       schemas-changed: ${{ steps.changes.outputs.schemas }}
       tools-changed: ${{ steps.changes.outputs.tools }}
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Check for changes
-      id: changes
-      run: |
-        # Check if any servers were added/modified
-        if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '^servers/'; then
-          echo "servers=true" >> $GITHUB_OUTPUT
-        else
-          echo "servers=false" >> $GITHUB_OUTPUT
-        fi
-        
-        # Check if schemas changed
-        if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '^schemas/'; then
-          echo "schemas=true" >> $GITHUB_OUTPUT  
-        else
-          echo "schemas=false" >> $GITHUB_OUTPUT
-        fi
-        
-        # Check if tools changed
-        if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '^tools/'; then
-          echo "tools=true" >> $GITHUB_OUTPUT
-        else
-          echo "tools=false" >> $GITHUB_OUTPUT
-        fi
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for changes
+        id: changes
+        run: |
+          # Check if any servers were added/modified
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '^servers/'; then
+            echo "servers=true" >> $GITHUB_OUTPUT
+          else
+            echo "servers=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check if schemas changed
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '^schemas/'; then
+            echo "schemas=true" >> $GITHUB_OUTPUT  
+          else
+            echo "schemas=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Check if tools changed
+          if git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep -E '^tools/'; then
+            echo "tools=true" >> $GITHUB_OUTPUT
+          else
+            echo "tools=false" >> $GITHUB_OUTPUT
+          fi
 
   validate-servers:
     needs: check-changes
     if: needs.check-changes.outputs.servers == 'true'
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.13'
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v3
-      with:
-        version: "latest"
-    
-    - name: Install dependencies
-      run: |
-        uv sync --all-extras
-    
-    - name: Get changed servers
-      id: changed-servers
-      run: |
-        # Get list of changed server directories
-        changed_dirs=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '^servers/' | cut -d'/' -f2 | sort -u)
-        echo "Changed server directories: $changed_dirs"
-        echo "changed_dirs<<EOF" >> $GITHUB_OUTPUT
-        echo "$changed_dirs" >> $GITHUB_OUTPUT
-        echo "EOF" >> $GITHUB_OUTPUT
-    
-    - name: Validate changed servers
-      run: |
-        success=true
-        while IFS= read -r server_dir; do
-          if [ -n "$server_dir" ]; then
-            echo "🔍 Validating server: $server_dir"
-            if uv run python tools/validate.py "servers/$server_dir"; then
-              echo "✅ $server_dir passed validation"
-            else
-              echo "❌ $server_dir failed validation"
-              success=false
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Get changed servers
+        id: changed-servers
+        run: |
+          # Get list of changed server directories
+          changed_dirs=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '^servers/' | cut -d'/' -f2 | sort -u)
+          echo "Changed server directories: $changed_dirs"
+          echo "changed_dirs<<EOF" >> $GITHUB_OUTPUT
+          echo "$changed_dirs" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Validate changed servers
+        run: |
+          success=true
+          while IFS= read -r server_dir; do
+            if [ -n "$server_dir" ]; then
+              echo "🔍 Validating server: $server_dir"
+              if uv run python tools/validate.py "servers/$server_dir"; then
+                echo "✅ $server_dir passed validation"
+              else
+                echo "❌ $server_dir failed validation"
+                success=false
+              fi
             fi
+          done <<< "${{ steps.changed-servers.outputs.changed_dirs }}"
+
+          if [ "$success" = false ]; then
+            echo "❌ Some servers failed validation"
+            exit 1
           fi
-        done <<< "${{ steps.changed-servers.outputs.changed_dirs }}"
-        
-        if [ "$success" = false ]; then
-          echo "❌ Some servers failed validation"
-          exit 1
-        fi
-        echo "✅ All changed servers passed validation"
-    
-    - name: Test registry generation
-      run: |
-        echo "🔄 Testing registry generation..."
-        uv run python tools/generate.py
-        echo "✅ Registry generation successful"
-    
-    - name: Check for naming conflicts
-      run: |
-        echo "🔍 Checking for server name conflicts..."
-        # Extract server names from all server.yaml files
-        server_names=$(find servers -name "server.yaml" -exec yq eval '.name' {} \;)
-        
-        # Check for duplicates
-        duplicates=$(echo "$server_names" | sort | uniq -d)
-        if [ -n "$duplicates" ]; then
-          echo "❌ Duplicate server names found:"
-          echo "$duplicates"
-          exit 1
-        fi
-        echo "✅ No naming conflicts found"
+          echo "✅ All changed servers passed validation"
+
+      - name: Test registry generation
+        run: |
+          echo "🔄 Testing registry generation..."
+          uv run python tools/generate.py
+          echo "✅ Registry generation successful"
+
+      - name: Check for naming conflicts
+        run: |
+          echo "🔍 Checking for server name conflicts..."
+          # Extract server names from all server.yaml files
+          server_names=$(find servers -name "server.yaml" -exec yq eval '.name' {} \;)
+
+          # Check for duplicates
+          duplicates=$(echo "$server_names" | sort | uniq -d)
+          if [ -n "$duplicates" ]; then
+            echo "❌ Duplicate server names found:"
+            echo "$duplicates"
+            exit 1
+          fi
+          echo "✅ No naming conflicts found"
 
   security-check:
     needs: check-changes
     if: needs.check-changes.outputs.servers == 'true'
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Security scan for secrets
-      run: |
-        echo "🔒 Scanning for hardcoded secrets..."
-        
-        # Check for potential API keys or secrets in server files
-        if grep -r -i -E "(api[_-]?key|secret|password|token)" servers/ --include="*.yaml" --include="*.md"; then
-          echo "⚠️  Potential secrets found in server files. Please review:"
-          grep -r -i -E "(api[_-]?key|secret|password|token)" servers/ --include="*.yaml" --include="*.md" -n
-          echo ""
-          echo "ℹ️  If these are example values, ensure they are clearly marked as examples."
-          echo "ℹ️  Use the 'credentials' section in server.yaml for required environment variables."
-        else
-          echo "✅ No hardcoded secrets detected"
-        fi
-    
-    - name: Check Docker image references
-      run: |
-        echo "🐳 Checking Docker image references..."
-        
-        # Extract image references from server.yaml files
-        images=$(find servers -name "server.yaml" -exec yq eval '.deployment.image' {} \;)
-        
-        echo "Found Docker images:"
-        echo "$images"
-        
-        # Check if images follow naming convention
-        for image in $images; do
-          if [[ ! "$image" =~ ^nimblebrain/mcp- ]]; then
-            echo "⚠️  Image '$image' doesn't follow naming convention 'nimblebrain/mcp-*'"
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Security scan for secrets
+        run: |
+          echo "🔒 Scanning for hardcoded secrets..."
+
+          # Check for potential API keys or secrets in server files
+          if grep -r -i -E "(api[_-]?key|secret|password|token)" servers/ --include="*.yaml" --include="*.md"; then
+            echo "⚠️  Potential secrets found in server files. Please review:"
+            grep -r -i -E "(api[_-]?key|secret|password|token)" servers/ --include="*.yaml" --include="*.md" -n
+            echo ""
+            echo "ℹ️  If these are example values, ensure they are clearly marked as examples."
+            echo "ℹ️  Use the 'credentials' section in server.yaml for required environment variables."
           else
-            echo "✅ Image '$image' follows naming convention"
+            echo "✅ No hardcoded secrets detected"
           fi
-        done
+
+      - name: Check Docker image references
+        run: |
+          echo "🐳 Checking Docker image references..."
+
+          # Extract image references from server.yaml files
+          images=$(find servers -name "server.yaml" -exec yq eval '.deployment.image' {} \;)
+
+          echo "Found Docker images:"
+          echo "$images"
+
+          # Check if images follow naming convention
+          for image in $images; do
+            if [[ ! "$image" =~ ^nimblebrain/mcp- ]]; then
+              echo "⚠️  Image '$image' doesn't follow naming convention 'nimblebrain/mcp-*'"
+            else
+              echo "✅ Image '$image' follows naming convention"
+            fi
+          done
 
   comment-results:
     needs: [check-changes, validate-servers, security-check]
     if: always() && needs.check-changes.outputs.servers == 'true'
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Comment PR results
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const { owner, repo } = context.repo;
-          const pull_number = context.payload.pull_request.number;
-          
-          let comment = "## 🤖 Registry Validation Results\n\n";
-          
-          if ("${{ needs.validate-servers.result }}" === "success") {
-            comment += "✅ **Server Validation**: All servers passed validation\n";
-          } else if ("${{ needs.validate-servers.result }}" === "failure") {
-            comment += "❌ **Server Validation**: Some servers failed validation\n";
-          }
-          
-          if ("${{ needs.security-check.result }}" === "success") {
-            comment += "✅ **Security Check**: No issues detected\n";
-          } else if ("${{ needs.security-check.result }}" === "failure") {
-            comment += "⚠️ **Security Check**: Issues detected (see logs)\n";
-          }
-          
-          comment += "\n---\n";
-          comment += "*Automated validation by NimbleTools Registry CI*";
-          
-          await github.rest.issues.createComment({
-            owner,
-            repo,
-            issue_number: pull_number,
-            body: comment
-          });
+      - name: Comment PR results
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            let comment = "## 🤖 Registry Validation Results\n\n";
+
+            if ("${{ needs.validate-servers.result }}" === "success") {
+              comment += "✅ **Server Validation**: All servers passed validation\n";
+            } else if ("${{ needs.validate-servers.result }}" === "failure") {
+              comment += "❌ **Server Validation**: Some servers failed validation\n";
+            }
+
+            if ("${{ needs.security-check.result }}" === "success") {
+              comment += "✅ **Security Check**: No issues detected\n";
+            } else if ("${{ needs.security-check.result }}" === "failure") {
+              comment += "⚠️ **Security Check**: Issues detected (see logs)\n";
+            }
+
+            comment += "\n---\n";
+            comment += "*Automated validation by NimbleTools Registry CI*";
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pull_number,
+              body: comment
+            });

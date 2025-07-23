@@ -1,19 +1,19 @@
 name: Deploy Registry
 
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'servers/**'
-      - 'schemas/**'
-      - 'tools/**'
-  workflow_dispatch:
-    inputs:
-      force_deploy:
-        description: 'Force deployment even if no changes'
-        required: false
-        default: 'false'
-        type: boolean
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'servers/**'
+  #     - 'schemas/**'
+  #     - 'tools/**'
+  # workflow_dispatch:
+  #   inputs:
+  #     force_deploy:
+  #       description: 'Force deployment even if no changes'
+  #       required: false
+  #       default: 'false'
+  #       type: boolean
 
 jobs:
   generate-and-deploy:
