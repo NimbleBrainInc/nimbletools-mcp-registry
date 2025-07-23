@@ -1,0 +1,145 @@
+name: nationalparks-mcp
+version: 1.0.0
+status: active
+
+meta:
+  category: utilities
+  tags: [nationalparks, travel, external, nps, parks]
+  license: MIT
+  featured: true
+
+about:
+  displayName: "National Parks Information"
+  description: "National Parks Service API for comprehensive information about U.S. National Parks including park details, alerts, visitor centers, campgrounds, and events"
+  homepage: "https://github.com/NimbleBrainInc/mcp-server-nationalparks"
+  documentation: "https://github.com/NimbleBrainInc/mcp-server-nationalparks#readme"
+  repository: "https://github.com/NimbleBrainInc/mcp-server-nationalparks"
+
+maintainer:
+  name: "NimbleBrain Inc"
+  email: "hello@nimblebrain.ai"
+  organization: "NimbleBrainInc"
+  github: "NimbleBrainInc"
+
+source:
+  repository: "https://github.com/NimbleBrainInc/mcp-server-nationalparks"
+  branch: "main"
+  dockerfile: "Dockerfile"
+
+container:
+  # Use universal adapter to run this stdio server as HTTP container
+  image: "nimbletools/universal-adapter:latest"
+  registry: "docker.io"
+  port: 8000
+
+deployment:
+  type: "stdio"
+  stdio:
+    executable: "npx"
+    args: ["-y", "mcp-server-nationalparks"]
+    workingDir: "/tmp"
+
+credentials:
+  - name: NPS_API_KEY
+    description: "National Park Service API key - get one at https://www.nps.gov/subjects/developer/get-started.htm"
+    required: true
+    example: "your_nps_api_key_here"
+    link: "https://www.nps.gov/subjects/developer/get-started.htm"
+  - name: LOG_LEVEL
+    description: "Logging level (optional, defaults to info)"
+    required: false
+    example: "info"
+
+capabilities:
+  tools:
+    - name: find_parks
+      description: Search for national parks by state, activities, or other criteria
+      schema:
+        type: object
+        properties:
+          stateCode:
+            type: string
+            description: Two-letter state code (e.g., CA, NY)
+          limit:
+            type: number
+            description: Maximum number of parks to return (default 50)
+            maximum: 50
+          start:
+            type: number
+            description: Starting index for pagination (default 0)
+          q:
+            type: string
+            description: Search query for park names or descriptions
+    - name: get_park_details
+      description: Get comprehensive information about a specific national park
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (e.g., yell for Yellowstone)
+        required:
+          - parkCode
+    - name: get_alerts
+      description: Retrieve current alerts and closures for parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of alerts to return
+            maximum: 50
+    - name: get_visitor_centers
+      description: Find visitor center information for parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of visitor centers to return
+            maximum: 50
+    - name: get_campgrounds
+      description: Get campground information for parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of campgrounds to return
+            maximum: 50
+    - name: get_events
+      description: Search for events happening at national parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of events to return
+            maximum: 50
+          dateStart:
+            type: string
+            description: Start date for event search (YYYY-MM-DD format)
+          dateEnd:
+            type: string
+            description: End date for event search (YYYY-MM-DD format)
+
+  resources: []
+  prompts: []
+
+changelog:
+  - version: "1.0.0"
+    date: "2025-08-04"
+    changes:
+      - "Initial release"

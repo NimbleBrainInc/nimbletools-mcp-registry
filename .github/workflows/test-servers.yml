@@ -1,0 +1,230 @@
+name: Test Servers
+
+# on:
+#   push:
+#     branches: [ main, develop ]
+#     paths:
+#       - 'servers/**'
+#   pull_request:
+#     branches: [ main ]
+#     paths:
+#       - 'servers/**'
+#   schedule:
+#     # Run tests daily at 2 AM UTC
+#     - cron: '0 2 * * *'
+#   workflow_dispatch:
+#     inputs:
+#       test_all:
+#         description: 'Test all servers (true) or only changed servers (false)'
+#         required: false
+#         default: 'false'
+#         type: boolean
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed-servers: ${{ steps.changes.outputs.servers }}
+      all-servers: ${{ steps.list.outputs.all }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed servers
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.event.inputs.test_all }}" = "true" ]; then
+            # For scheduled runs or manual override, test all servers
+            echo "servers=all" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            # For PRs, get changed servers
+            changed_dirs=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | grep '^servers/' | cut -d'/' -f2 | sort -u | tr '\n' ' ')
+            if [ -n "$changed_dirs" ]; then
+              echo "servers=$changed_dirs" >> $GITHUB_OUTPUT
+            else
+              echo "servers=" >> $GITHUB_OUTPUT
+            fi
+          else
+            # For push to main, test all servers
+            echo "servers=all" >> $GITHUB_OUTPUT
+          fi
+
+      - name: List all servers
+        id: list
+        run: |
+          all_servers=$(ls -1 servers/ | tr '\n' ' ')
+          echo "all=$all_servers" >> $GITHUB_OUTPUT
+
+  test-servers:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed-servers != ''
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        server: ${{ needs.detect-changes.outputs.changed-servers == 'all' && fromJson(format('["{0}"]', join(fromJson(format('[{0}]', needs.detect-changes.outputs.all-servers)), '","'))) || fromJson(format('["{0}"]', join(fromJson(format('[{0}]', needs.detect-changes.outputs.changed-servers)), '","'))) }}
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Test server - ${{ matrix.server }}
+        id: test
+        run: |
+          echo "🧪 Testing server: ${{ matrix.server }}"
+
+          # Set environment variables for servers that need them
+          case "${{ matrix.server }}" in
+            "finnhub")
+              # Use demo/sandbox API key for Finnhub
+              export FINNHUB_API_KEY="demo"
+              env_args="--env FINNHUB_API_KEY=demo"
+              ;;
+            *)
+              env_args=""
+              ;;
+          esac
+
+          # Run the test
+          if uv run python tools/test_server.py servers/${{ matrix.server }} $env_args; then
+            echo "result=success" >> $GITHUB_OUTPUT
+            echo "✅ Server ${{ matrix.server }} passed all tests"
+          else
+            echo "result=failure" >> $GITHUB_OUTPUT
+            echo "❌ Server ${{ matrix.server }} failed tests"
+          fi
+        continue-on-error: true
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs-${{ matrix.server }}
+          path: |
+            *.log
+            /tmp/mcp-test-*.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Comment on PR (if failed)
+        if: github.event_name == 'pull_request' && steps.test.outputs.result == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            const comment = `## ❌ Server Test Failed: ${{ matrix.server }}
+
+            The server \`${{ matrix.server }}\` failed functional testing. Please check:
+
+            - ✅ Server starts successfully
+            - ✅ Health endpoint responds correctly
+            - ✅ Tools endpoint lists available tools
+            - ✅ Individual tools execute without errors
+
+            View the [test logs](https://github.com/${owner}/${repo}/actions/runs/${{ github.run_id }}) for detailed error information.
+
+            ---
+            *Automated testing by NimbleTools Registry CI*`;
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: pull_number,
+              body: comment
+            });
+
+  test-summary:
+    needs: [detect-changes, test-servers]
+    if: always() && needs.detect-changes.outputs.changed-servers != ''
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Calculate test results
+        id: results
+        run: |
+          # This is a simplified summary - in a real implementation,
+          # you'd collect results from the test-servers job
+          echo "📊 Server testing completed"
+          echo "Check individual job results for details"
+
+      - name: Update PR with summary (if PR)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const pull_number = context.payload.pull_request.number;
+
+            // Find existing comment
+            const comments = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: pull_number
+            });
+
+            const botComment = comments.data.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('🧪 Server Testing Summary')
+            );
+
+            const comment = `## 🧪 Server Testing Summary
+
+            Server functional testing has completed. Check individual test jobs for detailed results.
+
+            **Tested servers:** ${{ needs.detect-changes.outputs.changed-servers }}
+
+            Individual test results are available in the [Actions tab](https://github.com/${owner}/${repo}/actions/runs/${{ github.run_id }}).
+
+            ---
+            *Automated testing by NimbleTools Registry CI*`;
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body: comment
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: pull_number,
+                body: comment
+              });
+            }
+
+  no-changes:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed-servers == ''
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: No server changes
+        run: |
+          echo "ℹ️  No server changes detected, skipping functional tests"

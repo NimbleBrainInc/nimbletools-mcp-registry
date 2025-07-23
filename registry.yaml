@@ -1,0 +1,519 @@
+# NimbleTools Community MCP Registry
+# Contains complete server specifications - no external dependencies
+# Generated automatically - DO NOT EDIT MANUALLY
+# Generated on: 2025-08-06T00:05:45.008521
+# Total servers: 4
+
+apiVersion: registry.nimbletools.ai/v1
+kind: MCPRegistry
+metadata:
+  name: community-servers
+  description: Community-contributed MCP servers for the NimbleTools runtime platform
+  version: 2.0.0
+  lastUpdated: '2025-08-06'
+  generatedBy: mcp-registry/tools/generate.py
+servers:
+- name: echo
+  version: 1.0.0
+  status: active
+  meta:
+    category: testing
+    tags:
+    - testing
+    - development
+    - echo
+    - debug
+    - utilities
+    license: MIT
+    featured: false
+  about:
+    displayName: Echo Test Service
+    description: Simple echo service for testing MCP protocol functionality, debugging,
+      and development workflows
+    homepage: https://github.com/NimbleBrainInc/mcp-echo
+    documentation: https://github.com/NimbleBrainInc/mcp-echo#readme
+  maintainer:
+    name: NimbleBrain Inc
+    email: hello@nimblebrain.ai
+    organization: NimbleBrainInc
+    github: NimbleBrainInc
+  source:
+    repository: https://github.com/NimbleBrainInc/mcp-echo
+    branch: main
+    dockerfile: Dockerfile
+  deployment:
+    type: http
+    healthPath: /health
+  container:
+    image: nimbletools/mcp-echo:latest
+    port: 8000
+  capabilities:
+    tools:
+    - name: echo_message
+      description: Echo back a message with optional formatting and metadata
+      schema:
+        type: object
+        properties:
+          message:
+            type: string
+            description: The message to echo back
+          uppercase:
+            type: boolean
+            description: Whether to convert the message to uppercase
+            default: false
+        required:
+        - message
+      examples:
+      - input:
+          message: Hello World
+        output:
+          original_message: Hello World
+          echoed_message: Hello World
+          uppercase_applied: false
+      - input:
+          message: test
+          uppercase: true
+        output:
+          original_message: test
+          echoed_message: TEST
+          uppercase_applied: true
+    - name: echo_with_delay
+      description: Echo back a message after a simulated delay for testing async operations
+      schema:
+        type: object
+        properties:
+          message:
+            type: string
+            description: The message to echo back
+          delay_seconds:
+            type: number
+            description: Simulated delay in seconds (max 5)
+            default: 1
+            minimum: 0
+            maximum: 5
+        required:
+        - message
+      examples:
+      - input:
+          message: Delayed test
+          delay_seconds: 2
+        output:
+          original_message: Delayed test
+          echoed_message: Delayed test
+          requested_delay: 2
+    - name: echo_json
+      description: Echo back structured JSON data with analysis and validation
+      schema:
+        type: object
+        properties:
+          data:
+            type: object
+            description: JSON data to echo back
+            additionalProperties: true
+        required:
+        - data
+      examples:
+      - input:
+          data:
+            key1: value1
+            key2: 123
+        output:
+          original_data:
+            key1: value1
+            key2: 123
+          analysis:
+            key_count: 2
+    resources: []
+    prompts: []
+  credentials: []
+  changelog:
+  - version: 1.0.0
+    date: '2025-08-04'
+    changes:
+    - Initial release
+- name: finnhub
+  version: 1.0.0
+  status: active
+  meta:
+    category: financial
+    tags:
+    - finance
+    - stocks
+    - market-data
+    - news
+    - api
+    - finnhub
+    license: MIT
+    featured: true
+  about:
+    displayName: Finnhub Market Data
+    description: Financial market data and news service powered by Finnhub API with
+      real-time stock quotes, company profiles, financial metrics, and analyst recommendations
+    homepage: https://github.com/NimbleBrainInc/mcp-finnhub
+    documentation: https://github.com/NimbleBrainInc/mcp-finnhub#readme
+  maintainer:
+    name: NimbleBrain Inc
+    email: hello@nimblebrain.ai
+    organization: NimbleBrainInc
+    github: NimbleBrainInc
+  source:
+    repository: https://github.com/NimbleBrainInc/mcp-finnhub
+    branch: main
+    dockerfile: Dockerfile
+  deployment:
+    type: http
+    healthPath: /health
+  container:
+    image: nimbletools/mcp-finnhub:latest
+    port: 8000
+  capabilities:
+    tools:
+    - name: get_market_news
+      description: Get latest market news from Finnhub by category
+      schema:
+        type: object
+        properties:
+          category:
+            type: string
+            description: News category (general, forex, crypto, merger)
+            default: general
+          min_id:
+            type: string
+            description: Minimum news ID to fetch from
+            default: '0'
+        required: []
+      examples:
+      - input:
+          category: general
+        output:
+          news: []
+          category: general
+          count: 0
+      - input:
+          category: crypto
+          min_id: '0'
+        output:
+          news: []
+          category: crypto
+          count: 0
+    - name: get_stock_quote
+      description: Get current stock quote for a symbol with pricing and trading data
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: Stock symbol (e.g., AAPL, MSFT)
+        required:
+        - symbol
+      examples:
+      - input:
+          symbol: AAPL
+        output:
+          symbol: AAPL
+          current_price: 150.25
+          change: 2.15
+      - input:
+          symbol: MSFT
+        output:
+          symbol: MSFT
+          current_price: 380.5
+          change: -1.25
+    - name: get_company_profile
+      description: Get detailed company profile information for a stock symbol
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: Stock symbol (e.g., AAPL, MSFT)
+        required:
+        - symbol
+      examples:
+      - input:
+          symbol: AAPL
+        output:
+          symbol: AAPL
+          name: Apple Inc
+          country: US
+          industry: Technology
+    - name: get_basic_financials
+      description: Get basic financial metrics and ratios for a company
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: Stock symbol (e.g., AAPL, MSFT)
+          metric:
+            type: string
+            description: Specific metric or 'all' for all metrics
+            default: all
+        required:
+        - symbol
+      examples:
+      - input:
+          symbol: AAPL
+          metric: all
+        output:
+          symbol: AAPL
+          key_metrics:
+            pe_ratio: 25.5
+            market_cap: 3000000000000
+    - name: get_recommendation_trends
+      description: Get analyst recommendation trends and ratings for a stock
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: Stock symbol (e.g., AAPL, MSFT)
+        required:
+        - symbol
+      examples:
+      - input:
+          symbol: AAPL
+        output:
+          symbol: AAPL
+          recommendations:
+          - period: 2024-01
+            strong_buy: 15
+            buy: 8
+            hold: 2
+    resources: []
+    prompts: []
+  credentials:
+  - name: FINNHUB_API_KEY
+    description: Finnhub API key for accessing financial data (get free key at finnhub.io)
+    required: true
+    example: your_finnhub_api_key_here
+    link: https://finnhub.io/register
+  changelog:
+  - version: 1.0.0
+    date: '2025-08-04'
+    changes:
+    - Initial release
+- name: nationalparks-mcp
+  version: 1.0.0
+  status: active
+  meta:
+    category: utilities
+    tags:
+    - nationalparks
+    - travel
+    - external
+    - nps
+    - parks
+    license: MIT
+    featured: true
+  about:
+    displayName: National Parks Information
+    description: National Parks Service API for comprehensive information about U.S.
+      National Parks including park details, alerts, visitor centers, campgrounds,
+      and events
+    homepage: https://github.com/NimbleBrainInc/mcp-server-nationalparks
+    documentation: https://github.com/NimbleBrainInc/mcp-server-nationalparks#readme
+    repository: https://github.com/NimbleBrainInc/mcp-server-nationalparks
+  maintainer:
+    name: NimbleBrain Inc
+    email: hello@nimblebrain.ai
+    organization: NimbleBrainInc
+    github: NimbleBrainInc
+  source:
+    repository: https://github.com/NimbleBrainInc/mcp-server-nationalparks
+    branch: main
+    dockerfile: Dockerfile
+  container:
+    image: nimblebrain/universal-adapter:latest
+    registry: docker.io
+    port: 8000
+  deployment:
+    type: stdio
+    stdio:
+      executable: npx
+      args:
+      - -y
+      - mcp-server-nationalparks
+      workingDir: /tmp
+  credentials:
+  - name: NPS_API_KEY
+    description: National Park Service API key - get one at https://www.nps.gov/subjects/developer/get-started.htm
+    required: true
+    example: your_nps_api_key_here
+    link: https://www.nps.gov/subjects/developer/get-started.htm
+  - name: LOG_LEVEL
+    description: Logging level (optional, defaults to info)
+    required: false
+    example: info
+  capabilities:
+    tools:
+    - name: find_parks
+      description: Search for national parks by state, activities, or other criteria
+      schema:
+        type: object
+        properties:
+          stateCode:
+            type: string
+            description: Two-letter state code (e.g., CA, NY)
+          limit:
+            type: number
+            description: Maximum number of parks to return (default 50)
+            maximum: 50
+          start:
+            type: number
+            description: Starting index for pagination (default 0)
+          q:
+            type: string
+            description: Search query for park names or descriptions
+    - name: get_park_details
+      description: Get comprehensive information about a specific national park
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (e.g., yell for Yellowstone)
+        required:
+        - parkCode
+    - name: get_alerts
+      description: Retrieve current alerts and closures for parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of alerts to return
+            maximum: 50
+    - name: get_visitor_centers
+      description: Find visitor center information for parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of visitor centers to return
+            maximum: 50
+    - name: get_campgrounds
+      description: Get campground information for parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of campgrounds to return
+            maximum: 50
+    - name: get_events
+      description: Search for events happening at national parks
+      schema:
+        type: object
+        properties:
+          parkCode:
+            type: string
+            description: Four-letter park code (optional, omit for all parks)
+          limit:
+            type: number
+            description: Maximum number of events to return
+            maximum: 50
+          dateStart:
+            type: string
+            description: Start date for event search (YYYY-MM-DD format)
+          dateEnd:
+            type: string
+            description: End date for event search (YYYY-MM-DD format)
+    resources: []
+    prompts: []
+  changelog:
+  - version: 1.0.0
+    date: '2025-08-04'
+    changes:
+    - Initial release
+- name: reverse-text
+  version: 1.0.0
+  status: active
+  meta:
+    category: text-processing
+    tags:
+    - text
+    - string
+    - analysis
+    - reversal
+    - manipulation
+    license: MIT
+    featured: true
+  about:
+    displayName: Text Reversal & Analysis
+    description: Text manipulation service with reverse and analysis tools for processing
+      and transforming text data
+    homepage: https://github.com/NimbleBrainInc/mcp-reverse-text
+    documentation: https://github.com/NimbleBrainInc/mcp-reverse-text#readme
+  maintainer:
+    name: NimbleBrain Inc
+    email: hello@nimblebrain.ai
+    organization: NimbleBrainInc
+    github: NimbleBrainInc
+  source:
+    repository: https://github.com/NimbleBrainInc/mcp-reverse-text
+    branch: main
+    dockerfile: Dockerfile
+  deployment:
+    type: http
+    healthPath: /health
+  container:
+    image: nimbletools/mcp-reverse-text:latest
+    port: 8000
+  capabilities:
+    tools:
+    - name: reverse_text
+      description: Reverse the characters in a text string
+      schema:
+        type: object
+        properties:
+          text:
+            type: string
+            description: The text to reverse
+        required:
+        - text
+      examples:
+      - input:
+          text: Hello World
+        output: dlroW olleH
+      - input:
+          text: NimbleTools
+        output: slooTelmiN
+    - name: text_info
+      description: Get information about a text string including character count,
+        word count, and other statistics
+      schema:
+        type: object
+        properties:
+          text:
+            type: string
+            description: The text to analyze
+        required:
+        - text
+      examples:
+      - input:
+          text: Hello World
+        output:
+          characters: 11
+          words: 2
+          lines: 1
+    resources: []
+    prompts: []
+  credentials: []
+  changelog:
+  - version: 1.0.0
+    date: '2025-01-23'
+    changes:
+    - Initial release with reverse_text and text_info tools
+    - Containerized deployment with FastAPI
+    - Health check and monitoring endpoints

@@ -1,0 +1,145 @@
+name: finnhub
+version: 1.0.0
+status: active
+
+meta:
+  category: financial
+  tags: [finance, stocks, market-data, news, api, finnhub]
+  license: MIT
+  featured: true
+
+about:
+  displayName: "Finnhub Market Data"
+  description: "Financial market data and news service powered by Finnhub API with real-time stock quotes, company profiles, financial metrics, and analyst recommendations"
+  homepage: "https://github.com/NimbleBrainInc/mcp-finnhub"
+  documentation: "https://github.com/NimbleBrainInc/mcp-finnhub#readme"
+
+maintainer:
+  name: "NimbleBrain Inc"
+  email: "hello@nimblebrain.ai"
+  organization: "NimbleBrainInc"
+  github: "NimbleBrainInc"
+
+source:
+  repository: "https://github.com/NimbleBrainInc/mcp-finnhub"
+  branch: "main"
+  dockerfile: "Dockerfile"
+
+deployment:
+  type: "http"
+  healthPath: "/health"
+
+container:
+  image: "nimbletools/mcp-finnhub:latest"
+  port: 8000
+
+capabilities:
+  tools:
+    - name: get_market_news
+      description: "Get latest market news from Finnhub by category"
+      schema:
+        type: object
+        properties:
+          category:
+            type: string
+            description: "News category (general, forex, crypto, merger)"
+            default: "general"
+          min_id:
+            type: string
+            description: "Minimum news ID to fetch from"
+            default: "0"
+        required: []
+      examples:
+        - input: { category: "general" }
+          output: { news: [], category: "general", count: 0 }
+        - input: { category: "crypto", min_id: "0" }
+          output: { news: [], category: "crypto", count: 0 }
+
+    - name: get_stock_quote
+      description: "Get current stock quote for a symbol with pricing and trading data"
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: "Stock symbol (e.g., AAPL, MSFT)"
+        required: [symbol]
+      examples:
+        - input: { symbol: "AAPL" }
+          output: { symbol: "AAPL", current_price: 150.25, change: 2.15 }
+        - input: { symbol: "MSFT" }
+          output: { symbol: "MSFT", current_price: 380.50, change: -1.25 }
+
+    - name: get_company_profile
+      description: "Get detailed company profile information for a stock symbol"
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: "Stock symbol (e.g., AAPL, MSFT)"
+        required: [symbol]
+      examples:
+        - input: { symbol: "AAPL" }
+          output:
+            {
+              symbol: "AAPL",
+              name: "Apple Inc",
+              country: "US",
+              industry: "Technology",
+            }
+
+    - name: get_basic_financials
+      description: "Get basic financial metrics and ratios for a company"
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: "Stock symbol (e.g., AAPL, MSFT)"
+          metric:
+            type: string
+            description: "Specific metric or 'all' for all metrics"
+            default: "all"
+        required: [symbol]
+      examples:
+        - input: { symbol: "AAPL", metric: "all" }
+          output:
+            {
+              symbol: "AAPL",
+              key_metrics: { pe_ratio: 25.5, market_cap: 3000000000000 },
+            }
+
+    - name: get_recommendation_trends
+      description: "Get analyst recommendation trends and ratings for a stock"
+      schema:
+        type: object
+        properties:
+          symbol:
+            type: string
+            description: "Stock symbol (e.g., AAPL, MSFT)"
+        required: [symbol]
+      examples:
+        - input: { symbol: "AAPL" }
+          output:
+            {
+              symbol: "AAPL",
+              recommendations:
+                [{ period: "2024-01", strong_buy: 15, buy: 8, hold: 2 }],
+            }
+
+  resources: []
+  prompts: []
+
+credentials:
+  - name: FINNHUB_API_KEY
+    description: "Finnhub API key for accessing financial data (get free key at finnhub.io)"
+    required: true
+    example: "your_finnhub_api_key_here"
+    link: "https://finnhub.io/register"
+
+changelog:
+  - version: "1.0.0"
+    date: "2025-08-04"
+    changes:
+      - "Initial release"

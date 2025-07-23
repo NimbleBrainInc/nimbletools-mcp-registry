@@ -1,0 +1,389 @@
+# NimbleTools Community MCP Server Schema
+# Clean separation of server definition from infrastructure concerns
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://registry.nimbletools.ai/schemas/server-schema.yaml"
+
+title: "NimbleTools MCP Server Definition"
+description: "Clean server specification focused on functionality, not infrastructure"
+type: "object"
+
+required:
+  - name
+  - version
+  - status
+  - meta
+  - about
+  - maintainer
+  - source
+  - deployment
+  - capabilities
+
+properties:
+  # Basic server identification
+  name:
+    type: "string"
+    pattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    minLength: 2
+    maxLength: 50
+    description: "Unique server identifier (lowercase, hyphens allowed)"
+
+  version:
+    type: "string"
+    pattern: "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+    description: "Semantic version (e.g., 1.0.0, 1.2.3-beta.1)"
+
+  status:
+    type: "string"
+    enum: ["active", "deprecated", "experimental", "maintenance", "inactive"]
+    description: "Current status of the server"
+    default: "active"
+
+  # Metadata for discovery and categorization
+  meta:
+    type: "object"
+    required: ["category", "tags", "license"]
+    properties:
+      category:
+        type: "string"
+        enum: [
+          "text-processing",
+          "financial", 
+          "testing",
+          "utilities",
+          "communication",
+          "data-analytics",
+          "cloud-services",
+          "media",
+          "security",
+          "experimental"
+        ]
+
+      tags:
+        type: "array"
+        items:
+          type: "string"
+          pattern: "^[a-z][a-z0-9-]*$"
+          maxLength: 20
+        minItems: 1
+        maxItems: 10
+        uniqueItems: true
+
+      license:
+        type: "string"
+        pattern: "^[A-Z][A-Z0-9-]*$"
+        description: "SPDX license identifier"
+
+      featured:
+        type: "boolean"
+        default: false
+
+  # Display information
+  about:
+    type: "object"
+    required: ["displayName", "description"]
+    properties:
+      displayName:
+        type: "string"
+        minLength: 3
+        maxLength: 100
+
+      description:
+        type: "string"
+        minLength: 10
+        maxLength: 500
+
+      icon:
+        type: "string"
+        format: "uri"
+        pattern: "^https://.*\\.(png|jpg|jpeg|svg|webp)$"
+
+      homepage:
+        type: "string"
+        format: "uri"
+
+      documentation:
+        type: "string"
+        format: "uri"
+
+  # Maintainer information
+  maintainer:
+    type: "object"
+    required: ["name"]
+    properties:
+      name:
+        type: "string"
+        minLength: 2
+        maxLength: 100
+
+      email:
+        type: "string"
+        format: "email"
+
+      organization:
+        type: "string"
+        minLength: 2
+        maxLength: 100
+
+      github:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-]+$"
+
+  # Source code information
+  source:
+    type: "object"
+    required: ["repository", "branch"]
+    properties:
+      repository:
+        type: "string"
+        format: "uri"
+        pattern: "^https://github\\.com/[a-zA-Z0-9-_]+/[a-zA-Z0-9-_]+$"
+
+      branch:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-_/]+$"
+        default: "main"
+
+      dockerfile:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-_/.]+$"
+        default: "Dockerfile"
+
+      directory:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-_/.]+$"
+
+  # Container image information (for runtime deployment)
+  container:
+    type: "object"
+    description: "Container image information for deployment"
+    properties:
+      image:
+        type: "string"
+        pattern: "^[a-z0-9._-]+(/[a-z0-9._-]+)*:[a-zA-Z0-9.-_]+$"
+        description: "Full container image reference (registry/namespace/name:tag)"
+        examples:
+          - "docker.io/modelcontextprotocol/server-nationalparks:latest"
+          - "ghcr.io/owner/repo:v1.0.0"
+          - "nimbletools/mcp-echo:latest"
+
+      registry:
+        type: "string"
+        pattern: "^[a-z0-9.-]+$"
+        description: "Container registry hostname (optional metadata)"
+        examples:
+          - "docker.io"
+          - "ghcr.io"
+          - "registry.example.com"
+
+      port:
+        type: "integer"
+        minimum: 1
+        maximum: 65535
+        default: 8080
+        description: "Container port (for http servers)"
+
+  # Simplified deployment configuration - NO INFRASTRUCTURE DETAILS
+  deployment:
+    type: "object"
+    required: ["type"]
+    properties:
+      type:
+        type: "string"
+        enum: ["stdio", "http"]
+        description: "Deployment type: stdio for direct process or http for web service"
+        default: "http"
+
+      healthPath:
+        type: "string"
+        pattern: "^/[a-zA-Z0-9-_/]*$"
+        default: "/health"
+        description: "Health check endpoint (http type only)"
+
+      # Stdio-specific configuration
+      stdio:
+        type: "object"
+        description: "Configuration for stdio servers (required when type is stdio)"
+        properties:
+          executable:
+            type: "string"
+            description: "Command executable (e.g., npx, node, python, etc.)"
+            minLength: 1
+            maxLength: 50
+
+          args:
+            type: "array"
+            description: "Command arguments"
+            items:
+              type: "string"
+              maxLength: 200
+            maxItems: 20
+
+          workingDir:
+            type: "string"
+            description: "Working directory for command execution"
+            default: "/tmp"
+            maxLength: 200
+
+          environment:
+            type: "object"
+            description: "Additional environment variables"
+            additionalProperties:
+              type: "string"
+
+  # Capabilities definition (tools, resources, prompts)
+  capabilities:
+    type: "object"
+    required: ["tools"]
+    properties:
+      tools:
+        type: "array"
+        maxItems: 20
+        minItems: 1
+        items:
+          type: "object"
+          required: ["name", "description", "schema"]
+          properties:
+            name:
+              type: "string"
+              pattern: "^[a-z][a-z0-9_]*$"
+              maxLength: 50
+
+            description:
+              type: "string"
+              minLength: 10
+              maxLength: 200
+
+            schema:
+              type: "object"
+              required: ["type", "properties"]
+              properties:
+                type:
+                  const: "object"
+                properties:
+                  type: "object"
+                required:
+                  type: "array"
+                  items:
+                    type: "string"
+
+            examples:
+              type: "array"
+              maxItems: 5
+              items:
+                type: "object"
+
+      resources:
+        type: "array"
+        maxItems: 10
+        default: []
+        items:
+          type: "object"
+          required: ["uri", "name", "description"]
+          properties:
+            uri:
+              type: "string"
+              description: "Resource URI pattern"
+
+            name:
+              type: "string"
+              maxLength: 100
+              description: "Human-readable resource name"
+
+            description:
+              type: "string"
+              minLength: 10
+              maxLength: 200
+              description: "Resource description"
+
+            mimeType:
+              type: "string"
+              description: "MIME type of the resource"
+
+      prompts:
+        type: "array"
+        maxItems: 10
+        default: []
+        items:
+          type: "object"
+          required: ["name", "description"]
+          properties:
+            name:
+              type: "string"
+              pattern: "^[a-z][a-z0-9_]*$"
+              maxLength: 50
+              description: "Prompt identifier"
+
+            description:
+              type: "string"
+              minLength: 10
+              maxLength: 200
+              description: "Prompt description"
+
+            arguments:
+              type: "array"
+              maxItems: 10
+              default: []
+              items:
+                type: "object"
+                required: ["name", "description"]
+                properties:
+                  name:
+                    type: "string"
+                    pattern: "^[a-z][a-z0-9_]*$"
+                  description:
+                    type: "string"
+                  required:
+                    type: "boolean"
+                    default: false
+
+
+  # Required credentials/environment variables
+  credentials:
+    type: "array"
+    maxItems: 10
+    default: []
+    items:
+      type: "object"
+      required: ["name", "description", "required"]
+      properties:
+        name:
+          type: "string"
+          pattern: "^[A-Z][A-Z0-9_]*$"
+
+        description:
+          type: "string"
+          minLength: 10
+          maxLength: 200
+
+        required:
+          type: "boolean"
+
+        example:
+          type: "string"
+          description: "Example value format (not actual secret)"
+
+        link:
+          type: "string"
+          format: "uri"
+
+  # Changelog and version history
+  changelog:
+    type: "array"
+    maxItems: 20
+    items:
+      type: "object"
+      required: ["version", "date", "changes"]
+      properties:
+        version:
+          type: "string"
+          pattern: "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+        date:
+          type: "string"
+          format: "date"
+        changes:
+          type: "array"
+          items:
+            type: "string"
+
+additionalProperties: false
