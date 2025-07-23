@@ -1,0 +1,61 @@
+# NimbleTools Community MCP Registry Schema
+# Contains complete server specifications inline - no external dependencies
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://registry.nimbletools.ai/schemas/registry-schema.yaml"
+
+title: "NimbleTools MCP Registry"
+description: "Registry containing complete server specifications"
+type: "object"
+
+required:
+  - apiVersion
+  - kind
+  - metadata
+  - servers
+
+properties:
+  apiVersion:
+    type: "string"
+    const: "registry.nimbletools.ai/v1"
+    description: "API version for the registry format"
+
+  kind:
+    type: "string"
+    const: "MCPRegistry"
+    description: "Resource kind identifier"
+
+  metadata:
+    type: "object"
+    required: ["name", "description", "version", "lastUpdated", "generatedBy"]
+    properties:
+      name:
+        type: "string"
+        const: "community-servers"
+        description: "Registry identifier"
+
+      description:
+        type: "string"
+        description: "Registry description"
+
+      version:
+        type: "string"
+        pattern: "^\\d+\\.\\d+\\.\\d+$"
+        description: "Registry schema version"
+
+      lastUpdated:
+        type: "string"
+        format: "date"
+        description: "Last generation date"
+
+      generatedBy:
+        type: "string"
+        description: "Tool that generated this registry"
+
+  # Complete server specifications (using server-schema.yaml structure)
+  servers:
+    type: "array"
+    items:
+      $ref: "server-schema.yaml"
+
+additionalProperties: false

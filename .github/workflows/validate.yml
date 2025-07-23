@@ -1,0 +1,73 @@
+name: Validate Registry
+
+# on:
+#   push:
+#     branches: [ main, develop ]
+#   pull_request:
+#     branches: [ main ]
+#   workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Validate server schemas
+        run: |
+          uv run python tools/validate.py --all
+
+      - name: Generate registry
+        run: |
+          uv run python tools/generate.py
+
+      - name: Check registry generation
+        run: |
+          if [ ! -f registry.yaml ]; then
+            echo "❌ registry.yaml was not generated"
+            exit 1
+          fi
+          echo "✅ registry.yaml generated successfully"
+
+          # Check file size (should be > 1KB for 3+ servers)
+          size=$(wc -c < registry.yaml)
+          if [ $size -lt 1000 ]; then
+            echo "❌ registry.yaml seems too small ($size bytes)"
+            exit 1
+          fi
+          echo "✅ registry.yaml size looks good ($size bytes)"
+
+      - name: Upload registry artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: registry
+          path: registry.yaml
+          retention-days: 30
+
+      - name: Display registry stats
+        run: |
+          echo "📊 Registry Statistics:"
+          uv run python -c "
+          import yaml
+          with open('registry.yaml', 'r') as f:
+              registry = yaml.safe_load(f)
+          print(f'  Servers: {registry[\"metadata\"][\"serverCount\"]}')
+          print(f'  Categories: {len(registry[\"spec\"][\"categories\"])}')
+          print(f'  Active servers: {registry[\"spec\"][\"statistics\"][\"activeServers\"]}')
+          "
