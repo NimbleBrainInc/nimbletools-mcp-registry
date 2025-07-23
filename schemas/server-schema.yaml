@@ -1,0 +1,347 @@
+# NimbleTools Community MCP Server Schema
+# Version: 1.0.0
+# 
+# This schema defines the structure for server.yaml files in the registry.
+# Each server must conform to this schema for validation and registry generation.
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://registry.nimbletools.ai/schemas/server-schema.yaml"
+
+title: "NimbleTools MCP Server Definition"
+description: "Schema for defining MCP servers in the NimbleTools community registry"
+type: "object"
+
+required:
+  - name
+  - version
+  - status
+  - meta
+  - about
+  - maintainer
+  - source
+  - deployment
+  - tools
+
+properties:
+  # Basic server identification
+  name:
+    type: "string"
+    pattern: "^[a-z][a-z0-9-]*[a-z0-9]$"
+    minLength: 2
+    maxLength: 50
+    description: "Unique server identifier (lowercase, hyphens allowed)"
+    examples: ["reverse-text", "echo", "weather-api"]
+
+  version:
+    type: "string"
+    pattern: "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+    description: "Semantic version (e.g., 1.0.0, 1.2.3-beta.1)"
+    examples: ["1.0.0", "2.1.3", "1.0.0-beta.1"]
+
+  status:
+    type: "string"
+    enum: ["active", "deprecated", "experimental", "maintenance"]
+    description: "Current status of the server"
+    default: "active"
+
+  # Metadata for discovery and categorization
+  meta:
+    type: "object"
+    required: ["category", "tags", "license"]
+    properties:
+      category:
+        type: "string"
+        enum: [
+          "text-processing",
+          "financial", 
+          "testing",
+          "utilities",
+          "communication",
+          "data-analytics",
+          "cloud-services",
+          "media",
+          "security",
+          "experimental"
+        ]
+        description: "Primary category for organization"
+
+      tags:
+        type: "array"
+        items:
+          type: "string"
+          pattern: "^[a-z][a-z0-9-]*$"
+          maxLength: 20
+        minItems: 1
+        maxItems: 10
+        uniqueItems: true
+        description: "Descriptive tags for search and filtering"
+        examples: [["text", "analysis"], ["api", "finance", "stocks"]]
+
+      license:
+        type: "string"
+        pattern: "^[A-Z][A-Z0-9-]*$"
+        description: "SPDX license identifier"
+        examples: ["MIT", "Apache-2.0", "BSD-3-Clause"]
+
+      featured:
+        type: "boolean"
+        default: false
+        description: "Whether to feature in marketplace"
+
+  # Display information
+  about:
+    type: "object"
+    required: ["displayName", "description"]
+    properties:
+      displayName:
+        type: "string"
+        minLength: 3
+        maxLength: 100
+        description: "Human-readable name"
+        examples: ["Text Reversal & Analysis", "Echo Test Service"]
+
+      description:
+        type: "string"
+        minLength: 10
+        maxLength: 500
+        description: "Detailed description of functionality"
+
+      icon:
+        type: "string"
+        format: "uri"
+        description: "Optional icon URL (HTTPS only)"
+        pattern: "^https://.*\\.(png|jpg|jpeg|svg|webp)$"
+
+      homepage:
+        type: "string"
+        format: "uri"
+        description: "Optional homepage or documentation URL"
+
+      documentation:
+        type: "string"
+        format: "uri"
+        description: "Optional documentation URL"
+
+  # Maintainer information
+  maintainer:
+    type: "object"
+    required: ["name", "email"]
+    properties:
+      name:
+        type: "string"
+        minLength: 2
+        maxLength: 100
+        description: "Maintainer name or organization"
+
+      email:
+        type: "string"
+        format: "email"
+        description: "Contact email address"
+
+      organization:
+        type: "string"
+        minLength: 2
+        maxLength: 100
+        description: "Optional organization name"
+
+      github:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-]+$"
+        description: "Optional GitHub username"
+
+  # Source code information
+  source:
+    type: "object"
+    required: ["repository", "branch"]
+    properties:
+      repository:
+        type: "string"
+        format: "uri"
+        pattern: "^https://github\\.com/[a-zA-Z0-9-_]+/[a-zA-Z0-9-_]+$"
+        description: "GitHub repository URL"
+
+      branch:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-_/]+$"
+        default: "main"
+        description: "Git branch to use"
+
+      dockerfile:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-_/.]+$"
+        default: "Dockerfile"
+        description: "Path to Dockerfile"
+
+      directory:
+        type: "string"
+        pattern: "^[a-zA-Z0-9-_/.]+$"
+        description: "Optional subdirectory containing the server"
+
+  # Deployment configuration
+  deployment:
+    type: "object"
+    required: ["image", "port", "healthPath"]
+    properties:
+      image:
+        type: "string"
+        pattern: "^[a-z0-9-_./]+:[a-zA-Z0-9-_.]+$"
+        description: "Docker image name and tag"
+        examples: ["nimblebrain/mcp-echo:latest"]
+
+      port:
+        type: "integer"
+        minimum: 1024
+        maximum: 65535
+        default: 8000
+        description: "Container port number"
+
+      healthPath:
+        type: "string"
+        pattern: "^/[a-zA-Z0-9-_/]*$"
+        default: "/health"
+        description: "Health check endpoint path"
+
+      resources:
+        type: "object"
+        description: "Optional resource requirements"
+        properties:
+          requests:
+            type: "object"
+            properties:
+              cpu:
+                type: "string"
+                pattern: "^\\d+(m|\\d*\\.\\d*)?$"
+                description: "CPU request (e.g., 100m, 0.5)"
+              memory:
+                type: "string"
+                pattern: "^\\d+(Mi|Gi|M|G)$"
+                description: "Memory request (e.g., 128Mi, 1Gi)"
+          limits:
+            type: "object"
+            properties:
+              cpu:
+                type: "string"
+                pattern: "^\\d+(m|\\d*\\.\\d*)?$"
+                description: "CPU limit (e.g., 500m, 1)"
+              memory:
+                type: "string"
+                pattern: "^\\d+(Mi|Gi|M|G)$"
+                description: "Memory limit (e.g., 256Mi, 2Gi)"
+
+      scaling:
+        type: "object"
+        description: "Auto-scaling configuration"
+        properties:
+          minReplicas:
+            type: "integer"
+            minimum: 0
+            default: 0
+            description: "Minimum number of replicas (0 for scale-to-zero)"
+          maxReplicas:
+            type: "integer"
+            minimum: 1
+            maximum: 10
+            default: 3
+            description: "Maximum number of replicas"
+          targetConcurrency:
+            type: "integer"
+            minimum: 1
+            maximum: 100
+            default: 10
+            description: "Target concurrent requests per replica"
+
+  # Tool definitions
+  tools:
+    type: "array"
+    minItems: 1
+    maxItems: 20
+    items:
+      type: "object"
+      required: ["name", "description", "schema"]
+      properties:
+        name:
+          type: "string"
+          pattern: "^[a-z][a-z0-9_]*$"
+          maxLength: 50
+          description: "Tool function name"
+
+        description:
+          type: "string"
+          minLength: 10
+          maxLength: 200
+          description: "Tool functionality description"
+
+        schema:
+          type: "object"
+          description: "JSON Schema for tool parameters"
+          required: ["type", "properties"]
+          properties:
+            type:
+              const: "object"
+            properties:
+              type: "object"
+            required:
+              type: "array"
+              items:
+                type: "string"
+
+        examples:
+          type: "array"
+          maxItems: 5
+          items:
+            type: "object"
+          description: "Optional usage examples"
+
+  # Required credentials/environment variables
+  credentials:
+    type: "array"
+    maxItems: 10
+    default: []
+    items:
+      type: "object"
+      required: ["name", "description", "required"]
+      properties:
+        name:
+          type: "string"
+          pattern: "^[A-Z][A-Z0-9_]*$"
+          description: "Environment variable name"
+
+        description:
+          type: "string"
+          minLength: 10
+          maxLength: 200
+          description: "Description of what this credential is for"
+
+        required:
+          type: "boolean"
+          description: "Whether this credential is required"
+
+        example:
+          type: "string"
+          description: "Example value format (not actual secret)"
+
+        link:
+          type: "string"
+          format: "uri"
+          description: "Optional link to obtain credential"
+
+  # Changelog and version history
+  changelog:
+    type: "array"
+    maxItems: 20
+    items:
+      type: "object"
+      required: ["version", "date", "changes"]
+      properties:
+        version:
+          type: "string"
+          pattern: "^\\d+\\.\\d+\\.\\d+(-[a-zA-Z0-9.-]+)?(\\+[a-zA-Z0-9.-]+)?$"
+        date:
+          type: "string"
+          format: "date"
+        changes:
+          type: "array"
+          items:
+            type: "string"
+
+additionalProperties: false

@@ -1,0 +1,274 @@
+# NimbleTools Community MCP Registry Schema
+# Version: 1.0.0
+#
+# This schema defines the structure for the generated registry.yaml file
+# that is consumed by the NimbleTools runtime platform.
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://registry.nimbletools.ai/schemas/registry-schema.yaml"
+
+title: "NimbleTools MCP Registry"
+description: "Schema for the generated registry consumed by NimbleTools runtime"
+type: "object"
+
+required:
+  - apiVersion
+  - kind
+  - metadata
+  - spec
+
+properties:
+  apiVersion:
+    type: "string"
+    const: "registry.nimbletools.ai/v1"
+    description: "API version for the registry format"
+
+  kind:
+    type: "string"
+    const: "MCPRegistry"
+    description: "Resource kind identifier"
+
+  metadata:
+    type: "object"
+    required: ["name", "description", "version", "lastUpdated"]
+    properties:
+      name:
+        type: "string"
+        const: "community-servers"
+        description: "Registry identifier"
+
+      description:
+        type: "string"
+        description: "Registry description"
+
+      version:
+        type: "string"
+        pattern: "^\\d+\\.\\d+\\.\\d+$"
+        description: "Registry schema version"
+
+      lastUpdated:
+        type: "string"
+        format: "date"
+        description: "Last generation date"
+
+      generatedBy:
+        type: "string"
+        description: "Tool that generated this registry"
+
+      serverCount:
+        type: "integer"
+        minimum: 0
+        description: "Total number of servers in registry"
+
+  spec:
+    type: "object"
+    required: ["servers", "categories"]
+    properties:
+      # Registry configuration
+      autoDiscovery:
+        type: "boolean"
+        default: true
+        description: "Whether to enable automatic server discovery"
+
+      refreshInterval:
+        type: "string"
+        pattern: "^\\d+[hm]$"
+        default: "24h"
+        description: "How often to refresh server data"
+
+      # Server definitions
+      servers:
+        type: "array"
+        items:
+          type: "object"
+          required: [
+            "name", "displayName", "description", "category", "image",
+            "repository", "maintainer", "status", "version", "tags",
+            "license", "created", "tools"
+          ]
+          properties:
+            name:
+              type: "string"
+              description: "Unique server identifier"
+
+            displayName:
+              type: "string"
+              description: "Human-readable name"
+
+            description:
+              type: "string"
+              description: "Server description"
+
+            category:
+              type: "string"
+              description: "Primary category"
+
+            image:
+              type: "string"
+              description: "Docker image reference"
+
+            repository:
+              type: "object"
+              required: ["url", "branch"]
+              properties:
+                url:
+                  type: "string"
+                  format: "uri"
+                branch:
+                  type: "string"
+                dockerfile:
+                  type: "string"
+                directory:
+                  type: "string"
+
+            maintainer:
+              type: "object"
+              required: ["name", "email"]
+              properties:
+                name:
+                  type: "string"
+                email:
+                  type: "string"
+                  format: "email"
+                organization:
+                  type: "string"
+                github:
+                  type: "string"
+
+            status:
+              type: "string"
+              enum: ["active", "deprecated", "experimental", "maintenance"]
+
+            version:
+              type: "string"
+
+            tags:
+              type: "array"
+              items:
+                type: "string"
+
+            license:
+              type: "string"
+
+            featured:
+              type: "boolean"
+              default: false
+
+            created:
+              type: "string"
+              format: "date"
+
+            updated:
+              type: "string"
+              format: "date"
+
+            tools:
+              type: "array"
+              items:
+                type: "object"
+                required: ["name", "description", "inputSchema"]
+                properties:
+                  name:
+                    type: "string"
+                  description:
+                    type: "string"
+                  inputSchema:
+                    type: "object"
+                  examples:
+                    type: "array"
+
+            credentials:
+              type: "array"
+              items:
+                type: "object"
+                required: ["name", "description", "required"]
+                properties:
+                  name:
+                    type: "string"
+                  description:
+                    type: "string"
+                  required:
+                    type: "boolean"
+                  example:
+                    type: "string"
+                  link:
+                    type: "string"
+                    format: "uri"
+
+            deployment:
+              type: "object"
+              required: ["port", "healthPath"]
+              properties:
+                port:
+                  type: "integer"
+                healthPath:
+                  type: "string"
+                resources:
+                  type: "object"
+                scaling:
+                  type: "object"
+
+            about:
+              type: "object"
+              properties:
+                icon:
+                  type: "string"
+                  format: "uri"
+                homepage:
+                  type: "string"
+                  format: "uri"
+                documentation:
+                  type: "string"
+                  format: "uri"
+
+      # Category definitions
+      categories:
+        type: "array"
+        items:
+          type: "object"
+          required: ["name", "displayName", "description"]
+          properties:
+            name:
+              type: "string"
+              description: "Category identifier"
+
+            displayName:
+              type: "string"
+              description: "Human-readable category name"
+
+            description:
+              type: "string"
+              description: "Category description"
+
+            icon:
+              type: "string"
+              description: "Category icon identifier"
+
+            serverCount:
+              type: "integer"
+              minimum: 0
+              description: "Number of servers in this category"
+
+      # Statistics and metadata
+      statistics:
+        type: "object"
+        properties:
+          totalServers:
+            type: "integer"
+            minimum: 0
+
+          activeServers:
+            type: "integer"
+            minimum: 0
+
+          categories:
+            type: "object"
+            additionalProperties:
+              type: "integer"
+              minimum: 0
+
+          lastGenerated:
+            type: "string"
+            format: "date-time"
+
+additionalProperties: false

@@ -1,0 +1,81 @@
+name: reverse-text
+version: 1.0.0
+status: active
+
+meta:
+  category: text-processing
+  tags: [text, string, analysis, reversal, manipulation]
+  license: MIT
+  featured: true
+
+about:
+  displayName: "Text Reversal & Analysis"
+  description: "Text manipulation service with reverse and analysis tools for processing and transforming text data"
+  homepage: "https://github.com/NimbleBrainInc/mcp-reverse-text"
+  documentation: "https://github.com/NimbleBrainInc/mcp-reverse-text#readme"
+
+maintainer:
+  name: "NimbleBrain Inc"
+  email: "hello@nimblebrain.ai"
+  organization: "NimbleBrainInc"
+  github: "NimbleBrainInc"
+
+source:
+  repository: "https://github.com/NimbleBrainInc/mcp-reverse-text"
+  branch: "main"
+  dockerfile: "Dockerfile"
+
+deployment:
+  image: "nimblebrain/mcp-reverse-text:latest"
+  port: 8000
+  healthPath: "/health"
+  resources:
+    requests:
+      cpu: "25m"
+      memory: "32Mi"
+    limits:
+      cpu: "100m"
+      memory: "64Mi"
+  scaling:
+    minReplicas: 0
+    maxReplicas: 5
+    targetConcurrency: 10
+
+tools:
+  - name: reverse_text
+    description: "Reverse the characters in a text string"
+    schema:
+      type: object
+      properties:
+        text:
+          type: string
+          description: "The text to reverse"
+      required: [text]
+    examples:
+      - input: {text: "Hello World"}
+        output: "dlroW olleH"
+      - input: {text: "NimbleTools"}
+        output: "slooTelmiN"
+
+  - name: text_info
+    description: "Get information about a text string including character count, word count, and other statistics"
+    schema:
+      type: object
+      properties:
+        text:
+          type: string
+          description: "The text to analyze"
+      required: [text]
+    examples:
+      - input: {text: "Hello World"}
+        output: {characters: 11, words: 2, lines: 1}
+
+credentials: []
+
+changelog:
+  - version: "1.0.0"
+    date: "2025-01-23"
+    changes:
+      - "Initial release with reverse_text and text_info tools"
+      - "Containerized deployment with FastAPI"
+      - "Health check and monitoring endpoints"
