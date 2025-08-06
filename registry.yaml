@@ -1,7 +1,7 @@
 # NimbleTools Community MCP Registry
 # Contains complete server specifications - no external dependencies
 # Generated automatically - DO NOT EDIT MANUALLY
-# Generated on: 2025-08-06T00:05:45.008521
+# Generated on: 2025-08-06T10:55:16.521602
 # Total servers: 4
 
 apiVersion: registry.nimbletools.ai/v1
@@ -324,7 +324,7 @@ servers:
     branch: main
     dockerfile: Dockerfile
   container:
-    image: nimblebrain/universal-adapter:latest
+    image: nimbletools/universal-adapter:latest
     registry: docker.io
     port: 8000
   deployment:
