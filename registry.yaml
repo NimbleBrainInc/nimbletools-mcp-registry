@@ -1,8 +1,8 @@
 # NimbleTools Community MCP Registry
 # Contains complete server specifications - no external dependencies
 # Generated automatically - DO NOT EDIT MANUALLY
-# Generated on: 2025-08-12T10:24:39.435108
-# Total servers: 5
+# Generated on: 2025-08-12T13:37:12.129947
+# Total servers: 6
 
 apiVersion: registry.nimbletools.ai/v1
 kind: MCPRegistry
@@ -629,3 +629,194 @@ servers:
     - Initial release with reverse_text and text_info tools
     - Containerized deployment with FastAPI
     - Health check and monitoring endpoints
+- name: tavily-mcp
+  version: 0.2.9
+  status: active
+  meta:
+    category: utilities
+    tags:
+    - search
+    - web-scraping
+    - data-extraction
+    - intelligence
+    - real-time
+    license: MIT
+    featured: false
+  about:
+    displayName: Tavily MCP Server
+    description: Production ready MCP server with real-time search, extract, map &
+      crawl capabilities for web intelligence
+    homepage: https://github.com/tavily-ai/tavily-mcp
+    documentation: https://github.com/tavily-ai/tavily-mcp#readme
+  maintainer:
+    name: Tavily AI
+    email: support@tavily.com
+    organization: Tavily AI
+    github: tavily-ai
+  source:
+    repository: https://github.com/tavily-ai/tavily-mcp
+    branch: main
+    dockerfile: Dockerfile
+  container:
+    image: nimbletools/universal-adapter:latest
+    registry: docker.io
+    port: 8000
+  deployment:
+    type: stdio
+    stdio:
+      executable: npx
+      args:
+      - -y
+      - tavily-mcp@latest
+      workingDir: /tmp
+  capabilities:
+    tools:
+    - name: tavily_search
+      description: Real-time web search capabilities with intelligent result filtering
+        and ranking
+      schema:
+        type: object
+        properties:
+          query:
+            type: string
+            description: Search query to execute
+          max_results:
+            type: number
+            description: Maximum number of search results to return
+            default: 10
+          search_depth:
+            type: string
+            description: Search depth - basic or advanced
+            default: basic
+          include_answer:
+            type: boolean
+            description: Include AI-generated answer summary
+            default: false
+          include_raw_content:
+            type: boolean
+            description: Include raw content from search results
+            default: false
+        required:
+        - query
+      examples:
+      - input:
+          query: latest AI developments 2024
+          max_results: 5
+        output:
+          results: []
+          query: latest AI developments 2024
+          total_results: 5
+    - name: tavily_extract
+      description: Intelligent data extraction from web pages with structured output
+      schema:
+        type: object
+        properties:
+          url:
+            type: string
+            description: URL of the webpage to extract data from
+          schema:
+            type: object
+            description: Optional schema to structure the extracted data
+          extract_tables:
+            type: boolean
+            description: Extract table data from the page
+            default: false
+          extract_links:
+            type: boolean
+            description: Extract links from the page
+            default: false
+        required:
+        - url
+      examples:
+      - input:
+          url: https://example.com/article
+          extract_tables: true
+        output:
+          content: ''
+          tables: []
+          links: []
+          url: https://example.com/article
+    - name: tavily_map
+      description: Creates structured website maps to understand site architecture
+        and navigation
+      schema:
+        type: object
+        properties:
+          url:
+            type: string
+            description: Base URL of the website to map
+          max_depth:
+            type: number
+            description: Maximum depth to crawl
+            default: 2
+          include_external:
+            type: boolean
+            description: Include external links in the map
+            default: false
+        required:
+        - url
+      examples:
+      - input:
+          url: https://example.com
+          max_depth: 1
+        output:
+          sitemap: []
+          base_url: https://example.com
+          depth: 1
+    - name: tavily_crawl
+      description: Systematically explores websites with configurable crawling parameters
+      schema:
+        type: object
+        properties:
+          url:
+            type: string
+            description: Starting URL for the crawl
+          max_pages:
+            type: number
+            description: Maximum number of pages to crawl
+            default: 10
+          crawl_depth:
+            type: number
+            description: Maximum crawl depth
+            default: 2
+          follow_external:
+            type: boolean
+            description: Follow external links during crawl
+            default: false
+          extract_content:
+            type: boolean
+            description: Extract content from crawled pages
+            default: true
+        required:
+        - url
+      examples:
+      - input:
+          url: https://example.com
+          max_pages: 5
+          crawl_depth: 1
+        output:
+          pages: []
+          crawl_stats:
+            pages_crawled: 5
+            depth: 1
+          base_url: https://example.com
+    resources: []
+    prompts: []
+  credentials:
+  - name: TAVILY_API_KEY
+    description: Tavily API key for accessing search and extraction services (get
+      free key at tavily.com)
+    required: true
+    example: tvly-1234567890abcdef
+    link: https://tavily.com
+  - name: LOG_LEVEL
+    description: Logging level (optional, defaults to info)
+    required: false
+    example: info
+  changelog:
+  - version: 0.2.9
+    date: '2025-08-12'
+    changes:
+    - Initial registry integration with STDIO deployment
+    - Added tavily_search, tavily_extract, tavily_map, and tavily_crawl tools
+    - Production ready MCP server for real-time web intelligence
