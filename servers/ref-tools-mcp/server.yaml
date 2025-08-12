@@ -25,7 +25,8 @@ source:
 
 deployment:
   type: "http"
-  healthPath: "/health"
+  healthPath: "/ping"
+  mcpPath: "/mcp"
 
 container:
   image: "nimbletools/ref-tools-mcp:latest"

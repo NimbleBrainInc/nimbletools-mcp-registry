@@ -200,6 +200,11 @@ properties:
         default: "/health"
         description: "Health check endpoint (http type only)"
 
+      mcpPath:
+        type: string
+        default: "/mcp"
+        description: "MCP endpoint path - can include or exclude trailing slash"
+
       # Stdio-specific configuration
       stdio:
         type: "object"

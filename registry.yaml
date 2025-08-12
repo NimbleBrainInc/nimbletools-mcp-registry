@@ -1,7 +1,7 @@
 # NimbleTools Community MCP Registry
 # Contains complete server specifications - no external dependencies
 # Generated automatically - DO NOT EDIT MANUALLY
-# Generated on: 2025-08-12T06:27:58.071778
+# Generated on: 2025-08-12T09:43:33.471857
 # Total servers: 5
 
 apiVersion: registry.nimbletools.ai/v1
@@ -44,6 +44,7 @@ servers:
   deployment:
     type: http
     healthPath: /health
+    mcpPath: /mcp/
   container:
     image: nimbletools/mcp-echo:latest
     port: 8000
@@ -163,6 +164,7 @@ servers:
   deployment:
     type: http
     healthPath: /health
+    mcpPath: /mcp/
   container:
     image: nimbletools/mcp-finnhub:latest
     port: 8000
@@ -465,7 +467,8 @@ servers:
     dockerfile: Dockerfile
   deployment:
     type: http
-    healthPath: /health
+    healthPath: /ping
+    mcpPath: /mcp
   container:
     image: nimbletools/ref-tools-mcp:latest
     port: 8080
