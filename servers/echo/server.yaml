@@ -28,7 +28,7 @@ source:
 deployment:
   type: "http"
   healthPath: "/health"
-  mcpPath: "/mcp/"
+  mcpPath: "/mcp"
 
 container:
   image: "nimbletools/mcp-echo:latest"
