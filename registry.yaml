@@ -1,8 +1,8 @@
 # NimbleTools Community MCP Registry
 # Contains complete server specifications - no external dependencies
 # Generated automatically - DO NOT EDIT MANUALLY
-# Generated on: 2025-08-06T10:55:16.521602
-# Total servers: 4
+# Generated on: 2025-08-12T06:27:58.071778
+# Total servers: 5
 
 apiVersion: registry.nimbletools.ai/v1
 kind: MCPRegistry
@@ -10,7 +10,7 @@ metadata:
   name: community-servers
   description: Community-contributed MCP servers for the NimbleTools runtime platform
   version: 2.0.0
-  lastUpdated: '2025-08-06'
+  lastUpdated: '2025-08-12'
   generatedBy: mcp-registry/tools/generate.py
 servers:
 - name: echo
@@ -436,6 +436,114 @@ servers:
     date: '2025-08-04'
     changes:
     - Initial release
+- name: ref-tools-mcp
+  version: 1.0.0
+  status: active
+  meta:
+    category: utilities
+    tags:
+    - documentation
+    - search
+    - reference
+    - ai-tools
+    - token-efficient
+    license: MIT
+    featured: false
+  about:
+    displayName: Ref Tools MCP
+    description: Token-efficient documentation search server designed for AI coding
+      agents. Provides intelligent documentation search and webpage content extraction
+      with minimal context bloat.
+    homepage: https://github.com/ref-tools/ref-tools-mcp
+    documentation: https://github.com/ref-tools/ref-tools-mcp#readme
+  maintainer:
+    name: Matthew Dailey, Arjun Kumar
+    github: ref-tools
+  source:
+    repository: https://github.com/ref-tools/ref-tools-mcp
+    branch: main
+    dockerfile: Dockerfile
+  deployment:
+    type: http
+    healthPath: /health
+  container:
+    image: nimbletools/ref-tools-mcp:latest
+    port: 8080
+  capabilities:
+    tools:
+    - name: ref_search_documentation
+      description: Search technical documentation across web, GitHub, and private
+        resources with intelligent filtering to minimize token usage
+      schema:
+        type: object
+        properties:
+          query:
+            type: string
+            description: The search query for documentation
+          sources:
+            type: array
+            items:
+              type: string
+            description: Optional specific sources to search within
+          max_results:
+            type: integer
+            description: Maximum number of results to return
+            default: 5
+            minimum: 1
+            maximum: 20
+        required:
+        - query
+      examples:
+      - input:
+          query: Figma Comment REST API
+          max_results: 3
+        output:
+          results:
+          - Documentation excerpts with relevant API information
+          token_count: 150
+          sources_searched:
+          - figma.com/developers
+    - name: ref_read_url
+      description: Fetch and convert webpage content to markdown format for AI consumption
+      schema:
+        type: object
+        properties:
+          url:
+            type: string
+            format: uri
+            description: The URL to fetch and convert to markdown
+          extract_main_content:
+            type: boolean
+            description: Whether to extract only main content and skip navigation/ads
+            default: true
+        required:
+        - url
+      examples:
+      - input:
+          url: https://docs.example.com/api
+          extract_main_content: true
+        output:
+          content: '# API Documentation
+
+
+            Main content in markdown...'
+          word_count: 500
+          title: API Documentation
+    resources: []
+    prompts: []
+  credentials:
+  - name: REF_API_KEY
+    description: API key for accessing documentation search services
+    required: true
+    example: ref_1234567890abcdef
+    link: https://github.com/ref-tools/ref-tools-mcp#configuration
+  changelog:
+  - version: 1.0.0
+    date: '2025-08-12'
+    changes:
+    - Initial release with ref_search_documentation and ref_read_url tools
+    - Token-efficient documentation search functionality
+    - Markdown conversion for webpage content
 - name: reverse-text
   version: 1.0.0
   status: active
